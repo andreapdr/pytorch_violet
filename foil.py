@@ -8,7 +8,8 @@ from transformers import logging
 
 from lib import *
 from model import VIOLET_Base
-from utils import FoilingDataset, convert_to_string
+from dataset import FoilingDataset
+from utils import convert_to_string
 
 logging.set_verbosity_error()
 
