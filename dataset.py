@@ -1,5 +1,8 @@
+from collections import Counter
+from math import floor, ceil
 
 from lib import *
+
 
 class Dataset_Base(T.utils.data.Dataset):
     def __init__(self, args):
@@ -27,7 +30,7 @@ class FoilingDataset(Dataset_Base):
     def __init__(self, args, split):
         super().__init__(args)
         
-        self.img = pickle.load(open(f'_data/videos/{args["dataset"]}/encoded/{args["dataset"]}.pkl', 'rb'))
+        self.img = pickle.load(open(f'_data/videos/{args["dataset"]}.pkl', 'rb'))
         self.txt = json.load(open(f'./_data/foils/txt_{args["dataset"]}.json', 'r'))[split]
         self.keys = list(self.txt.keys())
 
@@ -54,8 +57,12 @@ class FoilingDataset(Dataset_Base):
     
     def get_trigger_list(self):
         triggers = [self.txt[k]["verb"] for k in self.keys]
-        counter = Counter(triggers)
+        counter = self._set_counter(triggers)
         return sorted([(k,v) for k,v in counter.items()], key=lambda x: x[1], reverse=True)
+
+    def _set_counter(self, triggers):
+        self.counter = Counter(triggers)
+        return self.counter
 
     def __getitem__(self, idx):
         key_dict = self.keys[idx]
@@ -63,12 +70,32 @@ class FoilingDataset(Dataset_Base):
         video_id = item["youtube_id"]
         
         img = []
+        metadata = {
+            "original_caption": item["original_caption"],
+            "action": item["verb"],
+            "video_id": video_id,
+            "dataset_id": key_dict
+            }
         video_name = f"{item['youtube_id']}_{int(item['start_time'])}_{int(item['end_time'])}"
         buffer = self.img.get(video_name, None)
         if buffer is None:
-            return None, None, key_dict, video_id
+            return None, None, metadata
+            # return None, None, key_dict, video_id, item['original_caption']
         for b in buffer: 
             img.append(self.str2img(b).unsqueeze(0))
         img = T.cat(img, dim=0)
         texts = (self.str2txt(item['caption'].replace("<", "").replace(">", "")), self.str2txt(item['foil'].replace("<", "").replace(">", "")))
-        return img, texts, key_dict, video_id
+        return img, texts, metadata
+        # return img, texts, key_dict, video_id, item['original_caption']
+
+
+class FoilConcatDataset(T.utils.data.ConcatDataset):
+    def __init__(self, datasets):
+        super().__init__(datasets)
+        self.tokzr = self.datasets[0].tokzr
+
+    def get_trigger_list(self):
+        for d in self.datasets:
+            d.get_trigger_list()
+        self.counter = sum([d.counter for d in self.datasets], start=Counter())         # https://stackoverflow.com/questions/30003466/summing-list-of-counters-in-python
+        return sorted([(k, v) for k, v in self.counter.items()], key=lambda x: x[1], reverse=True)

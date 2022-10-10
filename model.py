@@ -60,7 +60,7 @@ class VIOLET_Base(T.nn.Module):
     
     def go_cross(self, feat_img, mask_img, feat_txt, mask_txt):
         feat, mask = T.cat([feat_img, feat_txt], dim=1), T.cat([mask_img, mask_txt], dim=1)
-        mask = self.mask_ext(mask, mask.shape, mask.device)
+        mask = self.mask_ext(mask, mask.shape)
         out = self.trsfr(feat, mask, output_attentions=True)
         return out['last_hidden_state'], out['attentions']
     
@@ -76,5 +76,7 @@ class VIOLET_Base(T.nn.Module):
                 ckpt_old[k] = ckpt_new[k]
                 key_old.remove(k)     
         self.load_state_dict(ckpt_old)
-        print('===== Not Load:', key_old, '=====')
+        if key_old:
+            print('===== Not Load:', key_old, '=====')
+
         

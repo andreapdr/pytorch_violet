@@ -5,5 +5,7 @@ __pycache__
 *.sh
 _data
 .vscode
+foilResults/*
+_config/*
 
 _snapshot
