@@ -51,7 +51,7 @@ class VIOLET_Foil(VIOLET_Base):
 
 if __name__=='__main__':
     print('- Running VIOLET foil evaluation...')
-    ARGS_PATH = '_config/args_rareAct.json'
+    ARGS_PATH = '_config/args_allFoil.json'
     args = json.load(open(ARGS_PATH, 'r'))
     split = 'test'
     dataset = FoilingDataset(args, "test")

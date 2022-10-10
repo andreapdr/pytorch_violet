@@ -29,8 +29,13 @@ class Dataset_Base(T.utils.data.Dataset):
 class FoilingDataset(Dataset_Base):
     def __init__(self, args, split):
         super().__init__(args)
-        
-        self.img = pickle.load(open(f'_data/videos/{args["dataset"]}.pkl', 'rb'))
+
+        self.datasetName = args["dataset"]        
+        if "all" in args["dataset"].lower():
+            _allDataset = ["coin", "rareAct", "youCook2"]   # TODO: "smsm" 
+            self.img = {k:pickle.load(open(f'_data/videos/{k}.pkl', 'rb')) for k in _allDataset}
+        else:
+            self.img = pickle.load(open(f'_data/videos/{args["dataset"]}.pkl', 'rb'))
         self.txt = json.load(open(f'./_data/foils/txt_{args["dataset"]}.json', 'r'))[split]
         self.keys = list(self.txt.keys())
 
@@ -69,24 +74,25 @@ class FoilingDataset(Dataset_Base):
         item = self.txt[key_dict]
         video_id = item["youtube_id"]
         
-        img = []
         metadata = {
             "original_caption": item["original_caption"],
             "action": item["verb"],
             "video_id": video_id,
             "dataset_id": key_dict
             }
+        img = []
         video_name = f"{item['youtube_id']}_{int(item['start_time'])}_{int(item['end_time'])}"
-        buffer = self.img.get(video_name, None)
+        if "all" in self.datasetName:
+            buffer = self.img[item["original_dataset"]].get(video_name, None)
+        else:
+            buffer = self.img.get(video_name, None)
         if buffer is None:
             return None, None, metadata
-            # return None, None, key_dict, video_id, item['original_caption']
         for b in buffer: 
             img.append(self.str2img(b).unsqueeze(0))
         img = T.cat(img, dim=0)
         texts = (self.str2txt(item['caption'].replace("<", "").replace(">", "")), self.str2txt(item['foil'].replace("<", "").replace(">", "")))
         return img, texts, metadata
-        # return img, texts, key_dict, video_id, item['original_caption']
 
 
 class FoilConcatDataset(T.utils.data.ConcatDataset):
