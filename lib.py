@@ -16,6 +16,7 @@ import transformers
 from PIL import Image
 from tqdm import tqdm
 import pandas as pd
+from scipy.special import softmax
 
 # import torch.distributed as DIST
 # os.environ['TOKENIZERS_PARALLELISM'] = 'true'

@@ -27,17 +27,22 @@ class Dataset_Base(T.utils.data.Dataset):
         
 
 class FoilingDataset(Dataset_Base):
-    def __init__(self, args, split):
+    def __init__(self, args, split, tasks=["action_foil", "preState_foil", "postState_foil", "reverse_foil"], debug=False):
         super().__init__(args)
 
         self.datasetName = args["dataset"]        
+        self.tasks = ["capt"] + tasks
         if "all" in args["dataset"].lower():
             _allDataset = ["coin", "rareAct", "youCook2"]   # TODO: "smsm" 
             self.img = {k:pickle.load(open(f'_data/videos/{k}.pkl', 'rb')) for k in _allDataset}
         else:
             self.img = pickle.load(open(f'_data/videos/{args["dataset"]}.pkl', 'rb'))
-        self.txt = json.load(open(f'./_data/foils/txt_{args["dataset"]}.json', 'r'))[split]
+        self.txt = json.load(open(f'./_data/foils/{args["dataset"]}.json', 'r'))[split]
         self.keys = list(self.txt.keys())
+        self.debug = False
+        if debug:
+            self.debug = True
+            print('- NB: Running DATASET IN DEBUG MODE (foil sentence is hard-typed')
 
     def __len__(self):
         return len(self.keys)
@@ -61,7 +66,7 @@ class FoilingDataset(Dataset_Base):
         self.keys = new_list
     
     def get_trigger_list(self):
-        triggers = [self.txt[k]["verb"] for k in self.keys]
+        triggers = [self.txt[k]["verb"] for k in self.keys if self.txt[k]["setting"] == "action recognition (LLM)"]
         counter = self._set_counter(triggers)
         return sorted([(k,v) for k,v in counter.items()], key=lambda x: x[1], reverse=True)
 
@@ -72,27 +77,22 @@ class FoilingDataset(Dataset_Base):
     def __getitem__(self, idx):
         key_dict = self.keys[idx]
         item = self.txt[key_dict]
-        video_id = item["youtube_id"]
         
-        metadata = {
-            "original_caption": item["original_caption"],
-            "action": item["verb"],
-            "video_id": video_id,
-            "dataset_id": key_dict
-            }
         img = []
         video_name = f"{item['youtube_id']}_{int(item['start_time'])}_{int(item['end_time'])}"
         if "all" in self.datasetName:
             buffer = self.img[item["original_dataset"]].get(video_name, None)
+        elif "smsm" in item["original_dataset"]:
+            buffer = self.img.get(video_name.replace("_0_0", ""), None)
         else:
             buffer = self.img.get(video_name, None)
         if buffer is None:
-            return None, None, metadata
+            return None, None, key_dict, item
         for b in buffer: 
             img.append(self.str2img(b).unsqueeze(0))
         img = T.cat(img, dim=0)
-        texts = (self.str2txt(item['caption'].replace("<", "").replace(">", "")), self.str2txt(item['foil'].replace("<", "").replace(">", "")))
-        return img, texts, metadata
+        texts = {k:self.str2txt(item[k]) for k in self.tasks}
+        return img, texts, key_dict, item
 
 
 class FoilConcatDataset(T.utils.data.ConcatDataset):
