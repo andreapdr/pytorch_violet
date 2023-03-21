@@ -8,7 +8,7 @@ import pickle
 import sys
 from datetime import datetime
 
-import cv2
+# import cv2
 import numpy as np
 import torch as T
 import torchvision as TV

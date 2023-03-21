@@ -1,15 +1,8 @@
-import os
-
-os.environ['CUDA_VISIBLE_DEVICES'] = '1'
-
-import torch
 import torch.nn as nn
 from transformers import logging
 
 from lib import *
 from model import VIOLET_Base
-from dataset import FoilingDataset, FoilConcatDataset
-from utils import convert_to_string, task2str
 
 logging.set_verbosity_error()
 
@@ -48,41 +41,3 @@ class VIOLET_Foil(VIOLET_Base):
 
         return out_vtm
     
-
-if __name__=='__main__':
-    print('- Running VIOLET foil evaluation...')
-    ARGS_PATH = '_config/args_multi3bench.json'
-    args = json.load(open(ARGS_PATH, 'r'))
-    print(f"- Dataset: {args['dataset']}")
-    MASK_VIDEO = False
-    TASKS = ["action_foil"]
-    if MASK_VIDEO:
-        print(f"WARNING: discarding video modality - performing ablation study!")
-    split = 'test'
-    dataset = FoilingDataset(args, "test", tasks=TASKS, debug=False)
-    json_res = json.load(open(f"_data/foils/{args['dataset']}.json"))
-    tokenizer = dataset.tokzr
-
-    model = VIOLET_Foil().cuda()
-    model.load_ckpt(args["path_ckpt"]) 
-    
-    model.eval()
-    results = []
-    with torch.no_grad():
-        for i, (img, texts, data_id, metadata) in enumerate(tqdm(dataset)):
-            if img is None:
-                print(f"- (warning) ({i}), id: {data_id} is None")
-                continue
-
-            if MASK_VIDEO:
-                img = torch.zeros_like(img)
-
-            for task in (["capt"] + TASKS):
-                input_text = torch.tensor(texts[task][0]).unsqueeze(0).cuda()
-                input_mask = torch.tensor(texts[task][1]).unsqueeze(0).cuda()
-                out = model(img.unsqueeze(0).cuda(), input_text, input_mask).squeeze().detach().cpu().numpy().item()
-                json_res["test"][data_id][f"VIOLET_{task}"] = out
-            
-    now = f"{datetime.now():%m%d%H%M}"
-    json.dump(json_res, open(f"foilResults/results_multi3bench_{now}.json", "w"))
-    exit("Done!")
