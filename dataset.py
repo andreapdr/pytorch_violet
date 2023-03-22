@@ -140,14 +140,14 @@ class FoilConcatDataset(T.utils.data.ConcatDataset):
 
 
 class NewDataset(Dataset_Base):
-    def __init__(self, args):
+    def __init__(self, datapath, args):
         super().__init__(args)
         
-        self._data = json.load(open(os.path.expanduser(args.benchmark_path)))
+        self._data = json.load(open(os.path.expanduser(datapath)))
         self.data = [d for d in self._data.values()]
         self.instrument = args.instrument
         self.task = args.task
-        self.videodir = os.path.expanduser(args.videodir)
+        self.videodir = os.path.expanduser(args.video_dir)
         self.sample = 5
         print(f"- evaluating instrument: {self.instrument} on setting: {self.task}")
 

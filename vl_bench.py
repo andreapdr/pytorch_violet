@@ -13,12 +13,12 @@ def init_model():
     print(f"- loaded pre-trained VIOLET model")
     return model
 
-def get_dataset(args):
-    return NewDataset(args)
+def get_dataset(datapath, args):
+    return NewDataset(datapath, args)
 
 def run_vlbench(args):
     device = args.device
-    dataset = get_dataset(args)
+    dataset = get_dataset(args.json_path, args)
     model = init_model()
     model.load_ckpt("checkpoints/ckpt_violet_pretrain.pt")
     model.to(device)
@@ -50,10 +50,11 @@ def run_vlbench(args):
 if __name__ == "__main__":
     parser = ArgumentParser(description="VIOLET on VL-Bench")
     parser.add_argument(
-        "--benchmark_path",
+        "--json_path",
         type=str,
         default="~/datasets/vl-bench/cos-balanced.reduced.json",
     )
+    parser.add_argument("--video_dir", type=str, default="~/datasets/vl-bench/videos")
     parser.add_argument("--size_img", type=int, default=224, help="size of the image")
     parser.add_argument("--size_txt", type=int, default=128)
     parser.add_argument(
@@ -61,7 +62,6 @@ if __name__ == "__main__":
     )
     parser.add_argument("--instrument", type=str, default="change-of-state")
     parser.add_argument("--task", type=str, default="action")
-    parser.add_argument("--videodir", type=str, default="~/datasets/vl-bench/videos")
     parser.add_argument("--device", type=str, default="cuda")
 
     args = parser.parse_args()
