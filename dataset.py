@@ -139,7 +139,7 @@ class FoilConcatDataset(T.utils.data.ConcatDataset):
         )
 
 
-class NewDataset(Dataset_Base):
+class VLBenchDataset(Dataset_Base):
     def __init__(self, datapath, args):
         super().__init__(args)
         
@@ -162,13 +162,13 @@ class NewDataset(Dataset_Base):
     
     def _convert(self, d):
         d = torch.tensor(d)
-        d = d.unsqueeze(0)
+        # d = d.unsqueeze(0)
         return d
     
     def _get_video(self, idx):
-        video_path = os.path.join(self.videodir, self.data[idx]["video-id"]) + ".mp4"
-        start_time = self.data[idx]["timestamp"][0]
-        end_time = self.data[idx]["timestamp"][1]
+        video_path = os.path.join(self.videodir, self.data[idx]["youtube_id"]) + ".mp4"
+        start_time = self.data[idx]["start_time"]
+        end_time = self.data[idx]["end_time"]
         sampled_frames = self._process_video(video_path, start_time, end_time)
         imgs = []
         for s in sampled_frames:
@@ -177,7 +177,8 @@ class NewDataset(Dataset_Base):
             imgs.append(self._vlbench_str2img(s))
         # img = T.cat(imgs, dim=0)
         img = T.stack(imgs) # TODO
-        return img.unsqueeze(0)
+        # return img.unsqueeze(0)
+        return img
 
     def __getitem__(self, idx):
         text = self._get_text(idx)

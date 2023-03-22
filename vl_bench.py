@@ -1,6 +1,7 @@
 import torch
+from tqdm import tqdm
 from argparse import ArgumentParser
-from dataset import NewDataset
+from dataset import VLBenchDataset
 from predict import VIOLET_Foil
 
 import warnings
@@ -14,7 +15,7 @@ def init_model():
     return model
 
 def get_dataset(datapath, args):
-    return NewDataset(datapath, args)
+    return VLBenchDataset(datapath, args)
 
 def run_vlbench(args):
     device = args.device
@@ -24,8 +25,11 @@ def run_vlbench(args):
     model.to(device)
 
     pairwise_accuracy = 0
+    dataloader = torch.utils.data.DataLoader(dataset, batch_size=1, shuffle=False)
+
     with torch.no_grad():
-        for text, video in dataset:
+        for batch in tqdm(dataloader):
+            text, video = batch
             capt, capt_mask = text[0]
             foil, foil_mask = text[1]
 
@@ -43,7 +47,7 @@ def run_vlbench(args):
 
             if capt_score > foil_score:
                 pairwise_accuracy += 1
-    
+
     print(f"- Pairwise Accuracy: {pairwise_accuracy / len(dataset):.3f}")
 
 
@@ -52,7 +56,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--json_path",
         type=str,
-        default="~/datasets/vl-bench/cos-balanced.reduced.json",
+        default="~/datasets/vl-bench/cos-balanced.filtered.json",
     )
     parser.add_argument("--video_dir", type=str, default="~/datasets/vl-bench/videos")
     parser.add_argument("--size_img", type=int, default=224, help="size of the image")
