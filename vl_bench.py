@@ -28,10 +28,12 @@ def run_vlbench(args):
     dataloader = torch.utils.data.DataLoader(dataset, batch_size=1, shuffle=False)
 
     with torch.no_grad():
-        for batch in tqdm(dataloader):
-            text, video = batch
+        for batch in tqdm(dataloader, disable=True if args.debug else False):
+            text, video, sample_id = batch
             capt, capt_mask = text[0]
             foil, foil_mask = text[1]
+
+            if args.debug: print(sample_id[0])
 
             capt_score = model(
                 img=video.to(device),
@@ -56,7 +58,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--json_path",
         type=str,
-        default="~/datasets/vl-bench/cos-balanced.filtered.json",
+        default="~/datasets/vl-bench/cos-balanced.json",
     )
     parser.add_argument("--video_dir", type=str, default="~/datasets/vl-bench/videos")
     parser.add_argument("--size_img", type=int, default=224, help="size of the image")
@@ -66,6 +68,7 @@ if __name__ == "__main__":
     )
     parser.add_argument("--instrument", type=str, default="change-of-state")
     parser.add_argument("--task", type=str, default="action")
+    parser.add_argument("--debug", action="store_true")
     parser.add_argument("--device", type=str, default="cuda")
 
     args = parser.parse_args()
