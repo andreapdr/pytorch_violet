@@ -1,6 +1,7 @@
 import torch
 import torchvision
 from torchvision.transforms import ToPILImage
+from math import floor, ceil
 
 from lib import *
 
@@ -62,7 +63,14 @@ class VLBenchDataset(Dataset_Base):
         if self.data[idx]["youtube_id"] is not None:
             video_fname = self.data[idx]["youtube_id"] + ".mp4"
         else:
-            video_fname = self.data[idx]["video_file"]  # TODO: what about extension?
+            video_fname = self.data[idx]["video_file"]
+            if self.data[idx]["dataset"] == "smsm":
+                video_fname += ".webm"
+            elif self.data[idx]["dataset"] == "ikea":
+                video_fname += ".avi"
+            else:
+                video_fname += ".mp4"
+                
         video_path = os.path.join(self.videodir, video_fname)
         start_time = self.data[idx]["start_time"]
         end_time = self.data[idx]["end_time"]
@@ -78,7 +86,8 @@ class VLBenchDataset(Dataset_Base):
     def __getitem__(self, idx):
         text = self._get_text(idx)
         video = self._get_video(idx)
-        return text, video
+        sample_id = self.data[idx]["dataset_idx"]
+        return text, video, sample_id
 
     def _process_video(self, video_path, start_time, end_time):
         sampled_frames = self.get_images(video_path, start_time, end_time)
@@ -119,7 +128,10 @@ class VLBenchDataset(Dataset_Base):
 
         """
         sampled_frames = []
-        video = torchvision.io.read_video(video_path, pts_unit="sec", start_pts=start_time, end_pts=end_time)[0]
+        if start_time is None:
+            video = torchvision.io.read_video(video_path, pts_unit="sec")[0]
+        else:
+            video = torchvision.io.read_video(video_path, pts_unit="sec", start_pts=floor(start_time), end_pts=ceil(end_time))[0]
         N = video.shape[0]/(self.sample+1)
 
         for i in range(1, self.sample-2):
