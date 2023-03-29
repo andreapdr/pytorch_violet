@@ -58,7 +58,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--json_path",
         type=str,
-        default="~/datasets/vl-bench/cos-balanced.json",
+        default="~/datasets/vl-bench/change-state-action.json",
     )
     parser.add_argument("--video_dir", type=str, default="~/datasets/vl-bench/videos")
     parser.add_argument("--size_img", type=int, default=224, help="size of the image")
@@ -66,8 +66,6 @@ if __name__ == "__main__":
     parser.add_argument(
         "--path_ckpt", type=str, default="./_snapshot/ckpt_violet_pretrain.pt"
     )
-    parser.add_argument("--instrument", type=str, default="change-of-state")
-    parser.add_argument("--task", type=str, default="action")
     parser.add_argument("--debug", action="store_true")
     parser.add_argument("--device", type=str, default="cuda")
 

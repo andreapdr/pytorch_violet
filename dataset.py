@@ -40,19 +40,17 @@ class VLBenchDataset(Dataset_Base):
         
         self._data = json.load(open(os.path.expanduser(datapath)))
         self.data = [d for d in self._data.values()]
-        self.instrument = args.instrument
-        self.task = args.task
         self.videodir = os.path.expanduser(args.video_dir)
         self.sample = 5
-        print(f"- evaluating instrument: {self.instrument} on setting: {self.task}")
-
     
     def __len__(self):
         return len(self.data)
     
     def _get_text(self, idx):
-        capt, capt_mask = self.str2txt(self.data[idx]["foils"][self.task][0])
-        foil, foil_mask = self.str2txt(self.data[idx]["foils"][self.task][1])
+        _capt = self.data[idx]["caption"]
+        _foil = self.data[idx]["foils"][0]
+        capt, capt_mask = self.str2txt(_capt)
+        foil, foil_mask = self.str2txt(_foil)
         return (self._convert(capt), self._convert(capt_mask)), (self._convert(foil), self._convert(foil_mask))
     
     def _convert(self, d):
