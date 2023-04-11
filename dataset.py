@@ -62,9 +62,9 @@ class VLBenchDataset(Dataset_Base):
             video_fname = self.data[idx]["youtube_id"] + ".mp4"
         else:
             video_fname = self.data[idx]["video_file"]
-            if self.data[idx]["dataset"] == "smsm":
+            if self.data[idx]["dataset"] == "something-something-v2":
                 video_fname += ".webm"
-            elif self.data[idx]["dataset"] == "ikea":
+            elif self.data[idx]["dataset"] == "ikea_asm":
                 video_fname += ".avi"
             else:
                 video_fname += ".mp4"
@@ -78,14 +78,14 @@ class VLBenchDataset(Dataset_Base):
             s = s.permute(2, 0, 1)
             s = ToPILImage()(s).convert("RGB")
             imgs.append(self._vlbench_str2img(s))
-        img = T.stack(imgs) # TODO: check this once again
+        img = T.stack(imgs)
         return img
 
     def __getitem__(self, idx):
         text = self._get_text(idx)
         video = self._get_video(idx)
         sample_id = self.data[idx]["dataset_idx"]
-        return text, video, sample_id
+        return text, video, sample_id, str(idx)
 
     def _process_video(self, video_path, start_time, end_time):
         sampled_frames = self.get_images(video_path, start_time, end_time)
